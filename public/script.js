@@ -61,7 +61,7 @@ async function desofuscar() {
     }
 }
 
-// Dumpar Globais
+// Dumpar Globais (Versão Formatada)
 async function dumpar() {
     const codigo = document.getElementById('codigo').value;
     
@@ -77,12 +77,17 @@ async function dumpar() {
             body: JSON.stringify({ code: codigo }),
         });
 
-        const { funcoes, error } = await resposta.json();
+        const { resultado, error } = await resposta.json();
         
         if (error) {
             document.getElementById('resultado').textContent = `Erro: ${error}`;
         } else {
-            document.getElementById('resultado').textContent = `📌 Variáveis/Globais encontradas:\n${funcoes.join('\n')}`;
+            // Adiciona formatação visual com emojis e espaçamento
+            const resultadoFormatado = resultado
+                .replace(/🔹 Função/g, '\n\n🔹 Função')
+                .replace(/🔸 Variável/g, '\n\n🔸 Variável');
+            
+            document.getElementById('resultado').textContent = resultadoFormatado;
         }
     } catch (error) {
         document.getElementById('resultado').textContent = `Erro na requisição: ${error.message}`;
