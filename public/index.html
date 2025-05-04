@@ -3,52 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desofuscador Lua/Luau</title>
-    <link rel="stylesheet" href="style.css">
+    <title>🔓 Desofuscador Lua/Luau Avançado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>🔓 Desofuscador Lua/Luau</h1>
-        <p>Cole seu código ofuscado e escolha o método:</p>
-        
-        <textarea id="codigo" placeholder="Cole o código ofuscado aqui..."></textarea>
-        
-        <select id="metodo">
-            <option value="base64">Base64</option>
-            <option value="moonsec">MoonSec</option>
-            <option value="luaobf">LuaObfuscator</option>
-        </select>
-        
-        <button onclick="desofuscar()">Desofuscar</button>
-        
-        <h2>Resultado:</h2>
-        <pre id="resultado"></pre>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto p-4 max-w-4xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-blue-400 mb-2">🔓 Desofuscador Lua/Luau</h1>
+            <p class="text-gray-400">Desofusque códigos de MoonSec, LuaV3, SE Obfuscator e mais!</p>
+        </header>
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+            <textarea id="codigo" class="w-full h-64 p-3 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none" placeholder="Cole o código ofuscado aqui..."></textarea>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+                <select id="metodo" class="flex-1 p-2 bg-gray-700 rounded border border-gray-600">
+                    <option value="base64">Base64</option>
+                    <option value="moonsec">MoonSec</option>
+                    <option value="luaobf">LuaObfuscator</option>
+                    <option value="luav3">LuaV3</option>
+                    <option value="seobf">SE Obfuscator</option>
+                </select>
+                <button onclick="desofuscar()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-medium">Desofuscar</button>
+                <button onclick="dumpar()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded font-medium">Dumpar Funções</button>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-3 text-blue-400">Resultado:</h2>
+            <pre id="resultado" class="bg-gray-900 p-3 rounded overflow-x-auto text-sm"></pre>
+        </div>
     </div>
 
-    <script>
-        async function desofuscar() {
-            const codigo = document.getElementById("codigo").value;
-            const metodo = document.getElementById("metodo").value;
-            
-            if (!codigo) {
-                alert("Cole um código primeiro!");
-                return;
-            }
-
-            const resposta = await fetch("/api/desofuscar", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ codigo, metodo }),
-            });
-
-            const { resultado, erro } = await resposta.json();
-
-            if (erro) {
-                document.getElementById("resultado").textContent = `Erro: ${erro}`;
-            } else {
-                document.getElementById("resultado").textContent = resultado;
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
