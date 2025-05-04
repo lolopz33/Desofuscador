@@ -1,50 +1,70 @@
-export default async (req, res) => {
-    if (req.method !== "POST") {
-        return res.status(405).json({ erro: "Método não permitido." });
-    }
+import { Buffer } from 'buffer';
+import patterns from '../utils/patterns.json';
 
-    const { codigo, metodo } = req.body;
+// Ferramentas customizadas
+import { decodeMoonSec, decodeLuaV3, unpackSE } from '../utils/lua_decoder';
+
+export default async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    const { code, method } = req.body;
 
     try {
-        let resultado;
+        let result = code;
+        let detectedMethod = method;
 
-        // Base64
-        if (metodo === "base64") {
-            resultado = Buffer.from(codigo, "base64").toString("utf-8");
+        // Auto-detecção
+        if (method === 'auto') {
+            detectedMethod = detectObfuscator(code);
         }
 
-        // MoonSec (usa XOR + loadstring)
-        else if (metodo === "moonsec") {
-            const decoded = codigo.replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => 
-                String.fromCharCode(parseInt(hex, 16)));
-            resultado = decoded.replace(/loadstring\(.*?\)/, "---LOADSTRING REMOVIDO---");
+        switch (detectedMethod) {
+            // Base64 padrão
+            case 'base64':
+                result = Buffer.from(code, 'base64').toString('utf-8');
+                break;
+
+            // MoonSec (XOR + Loadstring)
+            case 'moonsec':
+                result = decodeMoonSec(code);
+                break;
+
+            // LuaV3 (Chunks criptografados)
+            case 'luav3':
+                result = decodeLuaV3(code);
+                break;
+
+            // SE Obfuscator (String concat)
+            case 'seobf':
+                result = unpackSE(code);
+                break;
+
+            // Bytecode Lua (Luac)
+            case 'luac':
+                result = await decompileBytecode(code);
+                break;
+
+            // XOR Encryption
+            case 'xor':
+                result = decodeXOR(code);
+                break;
+
+            default:
+                return res.status(400).json({ error: 'Método não suportado' });
         }
 
-        // LuaObfuscator (Base64 + manipulação de strings)
-        else if (metodo === "luaobf") {
-            const decoded = Buffer.from(codigo.split("'")[1], "base64").toString("utf-8");
-            resultado = decoded.replace(/\[\[\].*?\]\]/g, "");
-        }
-
-        // LuaV3 (usa chunks criptografados)
-        else if (metodo === "luav3") {
-            const chunkDecrypted = codigo.replace(/\(function\(.*?\)end\)\)/, match => {
-                return match.replace(/[^\w\s]/g, ""); // Remove caracteres especiais
-            });
-            resultado = chunkDecrypted;
-        }
-
-        // SE Obfuscator (frequentemente usa concatenação de strings)
-        else if (metodo === "seobf") {
-            resultado = codigo.replace(/"\s*\.\.\s*"/g, ""); // Remove concatenações
-        }
-
-        else {
-            return res.status(400).json({ erro: "Método inválido." });
-        }
-
-        res.status(200).json({ resultado });
-    } catch (erro) {
-        res.status(500).json({ erro: "Falha ao desofuscar." });
+        res.status(200).json({ result, method: detectedMethod });
+    } catch (error) {
+        res.status(500).json({ error: 'Falha na desofuscação', details: error.message });
     }
 };
+
+// Função de auto-detecção
+function detectObfuscator(code) {
+    for (const [obfuscator, pattern] of Object.entries(patterns)) {
+        if (new RegExp(pattern).test(code)) {
+            return obfuscator;
+        }
+    }
+    return 'unknown';
+}
