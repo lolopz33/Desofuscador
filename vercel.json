@@ -6,6 +6,10 @@
             "dest": "/api/desofuscar.js"
         },
         {
+            "src": "/api/dumper",
+            "dest": "/api/dumper.js"
+        },
+        {
             "src": "/(.*)",
             "dest": "/public/$1"
         }
