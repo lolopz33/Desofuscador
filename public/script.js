@@ -1,7 +1,13 @@
 // Dark Mode Toggle
 document.getElementById('darkModeToggle').addEventListener('click', () => {
     document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
 });
+
+// Verificar preferência de tema ao carregar
+if (localStorage.getItem('darkMode') === 'true') {
+    document.documentElement.classList.add('dark');
+}
 
 // Carregar Arquivo
 document.getElementById('fileInput').addEventListener('change', (e) => {
@@ -19,6 +25,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 function limpar() {
     document.getElementById('codigo').value = '';
     document.getElementById('resultado').textContent = '';
+    document.getElementById('info').textContent = '';
 }
 
 // Copiar Resultado
@@ -42,26 +49,40 @@ async function desofuscar() {
     }
 
     try {
+        // Mostrar loading
+        document.getElementById('resultado').textContent = '⏳ Processando...';
+        document.getElementById('info').textContent = '';
+        
         const resposta = await fetch("/api/desofuscar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code: codigo, method: metodo }),
         });
 
-        const { result, error, method: detectedMethod } = await resposta.json();
+        // Verificar se a resposta é JSON válido
+        const contentType = resposta.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await resposta.text();
+            throw new Error(`Resposta inválida: ${text.slice(0, 100)}`);
+        }
+
+        const { result, error, method: detectedMethod, isFormatted } = await resposta.json();
         
         if (error) {
-            document.getElementById('resultado').textContent = `Erro: ${error}`;
-        } else {
-            document.getElementById('resultado').textContent = result;
-            document.getElementById('info').textContent = `✅ Desofuscado usando: ${detectedMethod}`;
+            throw new Error(error);
         }
+
+        // Exibir resultado formatado
+        document.getElementById('resultado').textContent = result;
+        document.getElementById('info').textContent = `✅ ${isFormatted ? 'Código formatado e' : ''} Desofuscado usando: ${detectedMethod || metodo}`;
+        
     } catch (error) {
-        document.getElementById('resultado').textContent = `Erro na requisição: ${error.message}`;
+        document.getElementById('resultado').textContent = `Erro: ${error.message}`;
+        console.error("Detalhes do erro:", error);
     }
 }
 
-// Dumpar Globais (Versão Formatada)
+// Dumpar Globais (Versão Aprimorada)
 async function dumpar() {
     const codigo = document.getElementById('codigo').value;
     
@@ -71,6 +92,8 @@ async function dumpar() {
     }
 
     try {
+        document.getElementById('resultado').textContent = '⏳ Analisando código...';
+        
         const resposta = await fetch("/api/dumper", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -80,21 +103,31 @@ async function dumpar() {
         const { resultado, error } = await resposta.json();
         
         if (error) {
-            document.getElementById('resultado').textContent = `Erro: ${error}`;
-        } else {
-            // Adiciona formatação visual com emojis e espaçamento
-            const resultadoFormatado = resultado
-                .replace(/🔹 Função/g, '\n\n🔹 Função')
-                .replace(/🔸 Variável/g, '\n\n🔸 Variável');
-            
-            document.getElementById('resultado').textContent = resultadoFormatado;
+            throw new Error(error);
         }
+
+        // Formatar a saída com categorias claras
+        let output = "📋 Análise do Código\n\n";
+        const lines = resultado.split('\n');
+        
+        lines.forEach(line => {
+            if (line.includes('🔹 Função')) {
+                output += `\n${line}\n${'-'.repeat(40)}\n`;
+            } else if (line.includes('🔸 Variável')) {
+                output += `\n${line}\n`;
+            } else if (line.trim()) {
+                output += `  ${line}\n`;
+            }
+        });
+
+        document.getElementById('resultado').textContent = output;
+        
     } catch (error) {
-        document.getElementById('resultado').textContent = `Erro na requisição: ${error.message}`;
+        document.getElementById('resultado').textContent = `Erro: ${error.message}`;
     }
 }
 
-// Analisar Bytecode (Simulação)
+// Analisar Bytecode
 async function analisarBytecode() {
     const codigo = document.getElementById('codigo').value;
     
@@ -104,6 +137,8 @@ async function analisarBytecode() {
     }
 
     try {
+        document.getElementById('resultado').textContent = '⏳ Decompilando bytecode...';
+        
         const resposta = await fetch("/api/bytecode", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -113,11 +148,48 @@ async function analisarBytecode() {
         const { bytecode, error } = await resposta.json();
         
         if (error) {
-            document.getElementById('resultado').textContent = `Erro: ${error}`;
-        } else {
-            document.getElementById('resultado').textContent = `⚙️ Bytecode Lua:\n${bytecode}`;
+            throw new Error(error);
         }
+
+        // Adicionar syntax highlighting simulando
+        const formattedBytecode = bytecode
+            .replace(/(LOADK|GETGLOBAL)/g, '\x1b[35m$1\x1b[0m')  // Cores ANSI (opcional)
+            .replace(/\n/g, '\n  ');  // Indentação
+            
+        document.getElementById('resultado').textContent = `⚙️ Bytecode Lua:\n  ${formattedBytecode}`;
+        
     } catch (error) {
-        document.getElementById('resultado').textContent = `Erro na requisição: ${error.message}`;
+        document.getElementById('resultado').textContent = `Erro: ${error.message}`;
+    }
+}
+
+// Novo: Botão de Formatar Código
+async function formatarCodigo() {
+    const codigo = document.getElementById('codigo').value;
+    if (!codigo) {
+        alert("Cole um código primeiro!");
+        return;
+    }
+
+    try {
+        document.getElementById('resultado').textContent = '⏳ Formatando código...';
+        
+        const resposta = await fetch("/api/desofuscar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: codigo, method: 'format' }),
+        });
+
+        const { result, error } = await resposta.json();
+        
+        if (error) {
+            throw new Error(error);
+        }
+
+        document.getElementById('codigo').value = result;
+        document.getElementById('info').textContent = '✅ Código formatado!';
+        
+    } catch (error) {
+        document.getElementById('resultado').textContent = `Erro: ${error.message}`;
     }
 }
