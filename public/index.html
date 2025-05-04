@@ -1,1 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desofuscador Lua/Luau</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔓 Desofuscador Lua/Luau</h1>
+        <p>Cole seu código ofuscado e escolha o método:</p>
+        
+        <textarea id="codigo" placeholder="Cole o código ofuscado aqui..."></textarea>
+        
+        <select id="metodo">
+            <option value="base64">Base64</option>
+            <option value="moonsec">MoonSec</option>
+            <option value="luaobf">LuaObfuscator</option>
+        </select>
+        
+        <button onclick="desofuscar()">Desofuscar</button>
+        
+        <h2>Resultado:</h2>
+        <pre id="resultado"></pre>
+    </div>
 
+    <script>
+        async function desofuscar() {
+            const codigo = document.getElementById("codigo").value;
+            const metodo = document.getElementById("metodo").value;
+            
+            if (!codigo) {
+                alert("Cole um código primeiro!");
+                return;
+            }
+
+            const resposta = await fetch("/api/desofuscar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ codigo, metodo }),
+            });
+
+            const { resultado, erro } = await resposta.json();
+
+            if (erro) {
+                document.getElementById("resultado").textContent = `Erro: ${erro}`;
+            } else {
+                document.getElementById("resultado").textContent = resultado;
+            }
+        }
+    </script>
+</body>
+</html>
