@@ -8,7 +8,7 @@ Desofusque códigos Lua/Luau com suporte para:
 ## Como Usar
 ## 1. Clone o repositório:
   
-   git clone https://github.com/seu-usuario/desofuscador-lua.git
+   git clone [https://github.com/seu-usuario/desofuscador-lua.git](https://github.com/lolopz33/Desofuscador)
    
 ## 2.
 Faça deploy na Vercel:
