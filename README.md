@@ -1,4 +1,4 @@
-# Desofuscador Lua Imbatível
+# Desofuscador Lua 
 
 Desofusque códigos Lua/Luau com suporte para:
 - MoonSec, LuaV3, SE Obfuscator, Base64, XOR, etc.
